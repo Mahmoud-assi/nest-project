@@ -9,7 +9,7 @@
 generator client {
   provider = "prisma-client-js"
   // Generate into src so TypeScript always resolves types
-  output   = "../src/generated/prisma"
+  // output   = "../src/generated/prisma"
 }
 
 // Prisma 7+: connection URLs go in prisma.config.ts (DIRECT_URL for migrate, DATABASE_URL for app).
