@@ -1,0 +1,55 @@
+// =============================================================================
+// Prisma Schema - Database models (like defining tables in SQL)
+// =============================================================================
+// Prisma is the most popular ORM in the NestJS community. It generates a
+// type-safe client and lets you use a real database (PostgreSQL, MySQL, etc.)
+// without writing raw SQL. Think of it like defining your "database shape" here.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+  // Generate into src so TypeScript always resolves types
+  output   = "../src/generated/prisma"
+}
+
+// Prisma 7+: connection URLs go in prisma.config.ts (DIRECT_URL for migrate, DATABASE_URL for app).
+datasource db {
+  provider = "postgresql"
+}
+
+// -----------------------------------------------------------------------------
+// User model - represents one user in the database
+// -----------------------------------------------------------------------------
+// Each field becomes a column. @id = primary key, @unique = unique constraint,
+// @default() = default value. Prisma handles createdAt/updatedAt if you use them.
+// -----------------------------------------------------------------------------
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("user")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relation: one user can have many password reset tokens (for forgot-password flow)
+  passwordResetTokens PasswordResetToken[]
+}
+
+// -----------------------------------------------------------------------------
+// PasswordResetToken - for "forgot password" flow
+// -----------------------------------------------------------------------------
+// When user requests "forgot password", we create a token, send it by email
+// (you'll implement email later), and when they hit reset-password with this
+// token we allow them to set a new password. Token expires after 1 hour.
+// -----------------------------------------------------------------------------
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
