@@ -24,7 +24,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       // Where to get the token from (header: Bearer <token>)
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET') || 'default-secret-change-in-production',
+      secretOrKey:
+        configService.get<string>('JWT_SECRET') ||
+        'default-secret-change-in-production',
     });
   }
 

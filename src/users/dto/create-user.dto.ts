@@ -12,11 +12,18 @@ import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
  * internal fields like id or createdAt here - only what the client sends.
  */
 export class CreateUserDto {
-  @ApiProperty({ example: 'user@example.com', description: 'User email (unique)' })
+  @ApiProperty({
+    example: 'user@example.com',
+    description: 'User email (unique)',
+  })
   @IsEmail({}, { message: 'Please provide a valid email' })
   email: string;
 
-  @ApiProperty({ example: 'SecurePass123!', minLength: 8, description: 'Password (min 8 chars)' })
+  @ApiProperty({
+    example: 'SecurePass123!',
+    minLength: 8,
+    description: 'Password (min 8 chars)',
+  })
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters' })
   password: string;

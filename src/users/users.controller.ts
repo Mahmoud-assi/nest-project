@@ -40,10 +40,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all users (paginated, requires auth)' })
-  findAll(
-    @Query('skip') skip?: string,
-    @Query('take') take?: string,
-  ) {
+  findAll(@Query('skip') skip?: string, @Query('take') take?: string) {
     const skipNum = skip ? parseInt(skip, 10) : 0;
     const takeNum = take ? Math.min(parseInt(take, 10), 100) : 20;
     return this.usersService.findAll(skipNum, takeNum);

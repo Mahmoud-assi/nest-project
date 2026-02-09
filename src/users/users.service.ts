@@ -106,7 +106,12 @@ export class UsersService {
    */
   async update(id: string, dto: UpdateUserDto) {
     await this.findOne(id);
-    const data: { name?: string; password?: string; role?: string; isActive?: boolean } = {};
+    const data: {
+      name?: string;
+      password?: string;
+      role?: string;
+      isActive?: boolean;
+    } = {};
     if (dto.name !== undefined) data.name = dto.name;
     if (dto.role !== undefined) data.role = dto.role;
     if (dto.isActive !== undefined) data.isActive = dto.isActive;
@@ -135,6 +140,7 @@ export class UsersService {
    * Remove password from user object before sending to client. Never expose hashes.
    */
   omitPassword<T extends { password?: string }>(user: T): Omit<T, 'password'> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...rest } = user;
     return rest;
   }
