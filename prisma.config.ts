@@ -10,8 +10,9 @@ export default defineConfig({
   migrations: {
     // Folder for migration SQL files; Prisma creates it on first successful "migrate dev"
     path: 'prisma/migrations',
+    seed: 'npx ts-node prisma/seed.ts',
   },
   datasource: {
-    url: env('DIRECT_URL') || env('DATABASE_URL'),
+    url: env('DATABASE_URL'),
   },
 });

@@ -7,7 +7,8 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import type { User } from '../generated/prisma';
+import type { User } from '@prisma/client';
+import { Role } from '../common/constants/roles';
 
 export type { User };
 
@@ -53,7 +54,7 @@ export class UsersService {
         email: dto.email,
         password: hashedPassword,
         name: dto.name,
-        role: dto.role ?? 'user',
+        role: dto.role ?? 'PATIENT',
       },
     });
     return this.omitPassword(user);
@@ -87,7 +88,7 @@ export class UsersService {
       where: { id },
     });
     if (!user) {
-      throw new NotFoundException(`User with id "${id}" not found`);
+      throw new NotFoundException('common.USER_NOT_FOUND');
     }
     return this.omitPassword(user);
   }
@@ -109,7 +110,7 @@ export class UsersService {
     const data: {
       name?: string;
       password?: string;
-      role?: string;
+      role?: Role;
       isActive?: boolean;
     } = {};
     if (dto.name !== undefined) data.name = dto.name;

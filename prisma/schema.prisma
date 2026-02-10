@@ -4,17 +4,41 @@
 // Prisma is the most popular ORM in the NestJS community. It generates a
 // type-safe client and lets you use a real database (PostgreSQL, MySQL, etc.)
 // without writing raw SQL. Think of it like defining your "database shape" here.
+// Table and column names use @@map / @map for snake_case in the DB; TS stays camelCase.
 // =============================================================================
 
 generator client {
   provider = "prisma-client-js"
-  // Generate into src so TypeScript always resolves types
-  // output   = "../src/generated/prisma"
+  // Default output (node_modules/.prisma/client) so the client is found at runtime from dist/
 }
 
 // Prisma 7+: connection URLs go in prisma.config.ts (DIRECT_URL for migrate, DATABASE_URL for app).
 datasource db {
   provider = "postgresql"
+}
+
+// -----------------------------------------------------------------------------
+// Enums - Type-safe fixed sets of values (like TypeScript union types in DB)
+// -----------------------------------------------------------------------------
+// WHY ENUMS: Instead of free strings ("admin", "doctor"), we restrict values
+// at the DB level. Prevents typos and makes queries predictable. Your generated
+// Prisma client will expose Role.ADMIN, Role.DOCTOR, etc.
+// -----------------------------------------------------------------------------
+enum Role {
+  ADMIN
+  DOCTOR
+  PATIENT
+
+  @@map("role")
+}
+
+enum AppointmentStatus {
+  PENDING    // Just booked, not yet confirmed
+  CONFIRMED  // Doctor or system confirmed
+  CANCELLED
+  COMPLETED
+
+  @@map("appointment_status")
 }
 
 // -----------------------------------------------------------------------------
@@ -28,13 +52,110 @@ model User {
   email     String   @unique
   password  String
   name      String?
-  role      String   @default("user")
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  role      Role     @default(PATIENT)
+  isActive  Boolean  @default(true)  @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt     @map("updated_at")
 
-  // Relation: one user can have many password reset tokens (for forgot-password flow)
-  passwordResetTokens PasswordResetToken[]
+  // Optional: doctors belong to a clinic. Patients and admins leave this null.
+  clinicId String?  @map("clinic_id")
+  clinic   Clinic?  @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+
+  // Relations
+  passwordResetTokens    PasswordResetToken[]
+  workingHours           WorkingHour[]              // Doctor's weekly slots
+  appointmentsAsDoctor   Appointment[]              @relation("DoctorAppointments")
+  appointmentsAsPatient  Appointment[]              @relation("PatientAppointments")
+  medicalRecords         MedicalRecord[]            // Uploaded reports (PDF/images)
+
+  @@map("users")
+}
+
+// -----------------------------------------------------------------------------
+// Clinic - A physical clinic where doctors work
+// -----------------------------------------------------------------------------
+// WHY SEPARATE: Clinics have their own data (name, address). Doctors are
+// linked via User.clinicId. Later you can add opening hours per clinic, etc.
+// -----------------------------------------------------------------------------
+model Clinic {
+  id        String   @id @default(cuid())
+  name      String
+  address   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt     @map("updated_at")
+
+  doctors      User[]
+  appointments Appointment[]
+
+  @@map("clinics")
+}
+
+// -----------------------------------------------------------------------------
+// WorkingHour - When a doctor is available (e.g. Mon 09:00–17:00)
+// -----------------------------------------------------------------------------
+// WHY: Patients can only book within these slots. We store dayOfWeek (0=Sun,
+// 1=Mon, ... 6=Sat) and start/end as minutes from midnight (e.g. 540 = 09:00).
+// One doctor can have multiple rows per day (e.g. morning + afternoon shift).
+// -----------------------------------------------------------------------------
+model WorkingHour {
+  id           String   @id @default(cuid())
+  doctorId     String   @map("doctor_id")
+  doctor       User     @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  dayOfWeek    Int      @map("day_of_week")   // 0 = Sunday, 1 = Monday, ... 6 = Saturday
+  startMinutes Int      @map("start_minutes") // Minutes from midnight (e.g. 540 = 09:00)
+  endMinutes   Int      @map("end_minutes")   // e.g. 1020 = 17:00
+  createdAt    DateTime @default(now())      @map("created_at")
+  updatedAt    DateTime @updatedAt           @map("updated_at")
+
+  @@index([doctorId])
+  @@map("working_hours")
+}
+
+// -----------------------------------------------------------------------------
+// Appointment - A patient's booked slot with a doctor
+// -----------------------------------------------------------------------------
+// WHY UNIQUE: (doctorId, scheduledAt) ensures two patients cannot book the
+// same doctor at the same time. We'll use Prisma transactions when booking
+// to handle race conditions (two requests at once).
+// -----------------------------------------------------------------------------
+model Appointment {
+  id              String            @id @default(cuid())
+  patientId       String            @map("patient_id")
+  patient         User              @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId        String            @map("doctor_id")
+  doctor          User              @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Cascade)
+  clinicId        String            @map("clinic_id")
+  clinic          Clinic            @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  scheduledAt     DateTime         @map("scheduled_at") // Start time of the slot
+  durationMinutes Int              @default(30) @map("duration_minutes")
+  status          AppointmentStatus @default(PENDING)
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt     @map("updated_at")
+
+  @@unique([doctorId, scheduledAt])
+  @@index([patientId])
+  @@index([clinicId])
+  @@map("appointments")
+}
+
+// -----------------------------------------------------------------------------
+// MedicalRecord - Uploaded medical reports (PDF or images), stored locally
+// -----------------------------------------------------------------------------
+// File is saved on disk (e.g. uploads/); we store file_path and metadata here.
+// Doctors and patients can upload; uploadedById tracks who uploaded it.
+// -----------------------------------------------------------------------------
+model MedicalRecord {
+  id           String   @id @default(cuid())
+  filePath     String   @map("file_path")   // Relative path under uploads/ (e.g. 2025/02/abc123.pdf)
+  originalName String?  @map("original_name") // Original filename from client (e.g. report.pdf)
+  mimeType     String?  @map("mime_type")  // e.g. application/pdf, image/jpeg
+  uploadedById String   @map("uploaded_by_id")
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt     @map("updated_at")
+
+  @@index([uploadedById])
+  @@map("medical_records")
 }
 
 // -----------------------------------------------------------------------------
@@ -47,9 +168,11 @@ model User {
 model PasswordResetToken {
   id        String   @id @default(cuid())
   token     String   @unique
-  userId    String
+  userId    String   @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
+  expiresAt DateTime @map("expires_at")
   used      Boolean  @default(false)
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("password_reset_tokens")
 }

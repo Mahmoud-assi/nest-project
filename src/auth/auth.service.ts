@@ -47,11 +47,11 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.usersService.findByEmail(dto.email);
     if (!user) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('common.UNAUTHORIZED');
     }
     const isMatch = await bcrypt.compare(dto.password, user.password);
     if (!isMatch) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('common.UNAUTHORIZED');
     }
     const token = await this.createToken(user.id, user.email);
     return {

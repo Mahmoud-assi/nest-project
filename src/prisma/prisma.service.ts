@@ -1,5 +1,7 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { PrismaClient } from '../generated/prisma';
+import { ConfigService } from '@nestjs/config';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '@prisma/client';
 
 /**
  * PrismaService - NestJS wrapper for Prisma Client
@@ -7,6 +9,7 @@ import { PrismaClient } from '../generated/prisma';
  * WHY: Prisma gives you a client to talk to the DB. In Nest we inject it as
  * a service so every module can use the same connection and we can hook into
  * lifecycle (connect on startup, disconnect on shutdown).
+ * Prisma 7+ requires a driver adapter (e.g. @prisma/adapter-pg) for PostgreSQL.
  *
  * WHEN TO USE: Inject this in any service that needs to read/write the database.
  * Example: this.prisma.user.findMany()
@@ -16,11 +19,10 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
-  constructor() {
-    super({
-      // Optional: log SQL in development (useful when learning)
-      // log: ['query', 'info', 'warn', 'error'],
-    });
+  constructor(private readonly configService: ConfigService) {
+    const connectionString = configService.getOrThrow<string>('DATABASE_URL');
+    const adapter = new PrismaPg({ connectionString });
+    super({ adapter });
   }
 
   /**

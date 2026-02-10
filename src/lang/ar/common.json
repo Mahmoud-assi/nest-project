@@ -1,0 +1,15 @@
+{
+  "USER_NOT_FOUND": "المستخدم غير موجود",
+  "UNAUTHORIZED": "مصادقة غير صالحة أو مفقودة",
+  "FORBIDDEN": "ليس لديك صلاحية لتنفيذ هذا الإجراء",
+  "VALIDATION_FAILED": "فشل التحقق",
+  "INVALID_EMAIL": "يرجى تقديم بريد إلكتروني صالح",
+  "PASSWORD_MIN_LENGTH": "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل",
+  "ROLE_INVALID": "يجب أن تكون الصلاحية واحدة من: ADMIN, DOCTOR, PATIENT",
+  "SLOT_ALREADY_BOOKED": "هذا الموعد محجوز بالفعل. يرجى اختيار وقت آخر.",
+  "DOCTOR_NOT_AVAILABLE": "الطبيب غير متاح في الوقت المختار.",
+  "DOCTOR_NOT_FOUND": "الطبيب غير موجود أو لا يقبل المواعيد.",
+  "FILE_REQUIRED": "يرجى رفع ملف (PDF أو صورة).",
+  "INVALID_FILE_TYPE": "يُسمح فقط بملفات PDF والصور (JPEG, PNG).",
+  "UPLOAD_FAILED": "فشل رفع الملف."
+}

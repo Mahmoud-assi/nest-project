@@ -1,22 +1,21 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { i18nValidationMessage } from 'nestjs-i18n';
+import { Role } from '../../common/constants/roles';
 
 /**
  * CreateUserDto - Data Transfer Object for creating a user
  * -------------------------------------------------------------------------
  * WHY DTOs: In Nest (and many backends), we don't accept raw body. We validate
- * and type the input with a DTO. class-validator decorators run automatically
- * when we use ValidationPipe (see main.ts) and return clear 400 errors.
- *
- * WHEN TO USE: This shape is used in POST /users (create). We never expose
- * internal fields like id or createdAt here - only what the client sends.
+ * and type the input with a DTO. I18nValidationPipe uses these message keys
+ * so validation errors are returned in the request language (Accept-Language or ?lang=).
  */
 export class CreateUserDto {
   @ApiProperty({
     example: 'user@example.com',
     description: 'User email (unique)',
   })
-  @IsEmail({}, { message: 'Please provide a valid email' })
+  @IsEmail({}, { message: i18nValidationMessage('common.INVALID_EMAIL') })
   email: string;
 
   @ApiProperty({
@@ -25,7 +24,7 @@ export class CreateUserDto {
     description: 'Password (min 8 chars)',
   })
   @IsString()
-  @MinLength(8, { message: 'Password must be at least 8 characters' })
+  @MinLength(8, { message: i18nValidationMessage('common.PASSWORD_MIN_LENGTH') })
   password: string;
 
   @ApiPropertyOptional({ example: 'John Doe', description: 'Display name' })
@@ -33,8 +32,8 @@ export class CreateUserDto {
   @IsString()
   name?: string;
 
-  @ApiPropertyOptional({ example: 'user', description: 'Role (default: user)' })
+  @ApiPropertyOptional({ enum: Role, description: 'Role (default: PATIENT)' })
   @IsOptional()
-  @IsString()
-  role?: string;
+  @IsEnum(Role, { message: i18nValidationMessage('common.ROLE_INVALID') })
+  role?: Role;
 }

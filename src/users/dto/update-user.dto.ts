@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { Role } from '../../common/constants/roles';
 
 /**
  * UpdateUserDto - Partial update (PATCH) for users
@@ -22,10 +23,10 @@ export class UpdateUserDto {
   @MinLength(8, { message: 'Password must be at least 8 characters' })
   password?: string;
 
-  @ApiPropertyOptional({ example: 'admin' })
+  @ApiPropertyOptional({ enum: Role })
   @IsOptional()
-  @IsString()
-  role?: string;
+  @IsEnum(Role, { message: 'Role must be one of: ADMIN, DOCTOR, PATIENT' })
+  role?: Role;
 
   @ApiPropertyOptional({
     example: true,

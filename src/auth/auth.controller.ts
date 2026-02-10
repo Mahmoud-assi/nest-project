@@ -1,5 +1,10 @@
 import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { SignUpDto } from './dto/sign-up.dto';
@@ -21,28 +26,50 @@ export class AuthController {
 
   @Post('sign-up')
   @ApiOperation({ summary: 'Register a new user and get JWT' })
+  @ApiResponse({ status: 201, description: 'User created and JWT returned.' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Validation failed. Message may be i18n key (e.g. common.INVALID_EMAIL) when Accept-Language or ?lang= is set.',
+  })
   signUp(@Body() dto: SignUpDto) {
     return this.authService.signUp(dto);
   }
 
   @Post('login')
   @ApiOperation({ summary: 'Login with email/password, get JWT' })
+  @ApiResponse({ status: 200, description: 'Returns { user, access_token }.' })
+  @ApiResponse({
+    status: 401,
+    description:
+      'Invalid credentials. Message: common.UNAUTHORIZED (translated).',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Validation failed (invalid body).',
+  })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
 
   @Post('forgot-password')
-  @ApiOperation({ summary: 'Request password reset (sends token; in production send email)' })
+  @ApiOperation({
+    summary: 'Request password reset (sends token; in production send email)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Always returns same message (no email enumeration).',
+  })
+  @ApiResponse({ status: 400, description: 'Validation failed.' })
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto);
   }
 
   @Post('reset-password')
   @ApiOperation({ summary: 'Reset password using token from forgot-password' })
-  resetPassword(
-    @Query('token') token: string,
-    @Body() dto: ResetPasswordDto,
-  ) {
+  @ApiResponse({ status: 200, description: 'Password updated.' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token.' })
+  resetPassword(@Query('token') token: string, @Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(token, dto);
   }
 
@@ -50,6 +77,14 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile (requires JWT)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Current user object (no password).',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Missing or invalid JWT. Message: common.UNAUTHORIZED.',
+  })
   getProfile(@Req() req: Request & { user: { id: string } }) {
     return req.user;
   }

@@ -9,7 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -32,6 +32,9 @@ export class UsersController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new user (admin or public sign-up)' })
+  @ApiResponse({ status: 201, description: 'User created (no password in response).' })
+  @ApiResponse({ status: 400, description: 'Validation or i18n keys (e.g. common.ROLE_INVALID).' })
+  @ApiResponse({ status: 409, description: 'Email already exists.' })
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
@@ -50,6 +53,9 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get one user by ID' })
+  @ApiResponse({ status: 200, description: 'User object.' })
+  @ApiResponse({ status: 404, description: 'common.USER_NOT_FOUND' })
+  @ApiResponse({ status: 401, description: 'common.UNAUTHORIZED' })
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }

@@ -1,0 +1,15 @@
+{
+  "USER_NOT_FOUND": "User not found",
+  "UNAUTHORIZED": "Invalid or missing authentication",
+  "FORBIDDEN": "You do not have permission to perform this action",
+  "VALIDATION_FAILED": "Validation failed",
+  "INVALID_EMAIL": "Please provide a valid email",
+  "PASSWORD_MIN_LENGTH": "Password must be at least 8 characters",
+  "ROLE_INVALID": "Role must be one of: ADMIN, DOCTOR, PATIENT",
+  "SLOT_ALREADY_BOOKED": "This time slot is already booked. Please choose another time.",
+  "DOCTOR_NOT_AVAILABLE": "The doctor is not available at the chosen time.",
+  "DOCTOR_NOT_FOUND": "Doctor not found or not accepting appointments.",
+  "FILE_REQUIRED": "Please upload a file (PDF or image).",
+  "INVALID_FILE_TYPE": "Only PDF and image files (JPEG, PNG) are allowed.",
+  "UPLOAD_FAILED": "File upload failed."
+}
